@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suno API Data</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #data-container { margin-top: 20px; }
+        .item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .item h3 { margin-top: 0; }
+        .item img { max-width: 100px; float: left; margin-right: 10px; }
+        .item audio { width: 100%; margin-top: 5px; }
+        .item p { margin-bottom: 5px; }
+        .clearfix::after { content: ""; clear: both; display: table; }
+    </style>
+</head>
+<body>
+    <h1>Suno Public Feed</h1>
+    <div id="loading">Loading data...</div>
+    <div id="data-container">
+        <!-- Data will be injected here -->
+    </div>
+
+    <script>
+        const apiUrl = 'https://studio-api.prod.suno.com/api/feed/v2?is_public=true&page=0';
+        const dataContainer = document.getElementById('data-container');
+        const loadingElement = document.getElementById('loading');
+
+        async function fetchDataAndDisplay() {
+            try {
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    // If response is not OK (e.g., 404, 500, or CORS error if not caught by browser earlier)
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json(); // Assuming the response is JSON
+
+                loadingElement.style.display = 'none'; // Hide loading message
+
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.classList.add('item', 'clearfix'); // Added clearfix for floated image
+
+                        let content = `<h3>${item.title || 'No Title'}</h3>`;
+                        if (item.image_url) {
+                            content += `<img src="${item.image_url}" alt="${item.title || 'Cover Art'}">`;
+                        }
+                        content += `<p><strong>User:</strong> ${item.display_name || 'N/A'}</p>`;
+                        content += `<p><strong>Plays:</strong> ${item.play_count || 0}</p>`;
+                        if (item.audio_url) {
+                            content += `<audio controls src="${item.audio_url}">Your browser does not support the audio element.</audio>`;
+                        }
+                        itemDiv.innerHTML = content;
+                        dataContainer.appendChild(itemDiv);
+                    });
+                } else {
+                    dataContainer.textContent = 'No data found or data is not in expected format.';
+                }
+
+                // To see the full raw data structure:
+                console.log('Full API Response Data:', data);
+
+            } catch (error) {
+                loadingElement.style.display = 'none'; // Hide loading message
+                console.error('Error fetching data:', error);
+                dataContainer.innerHTML = `<p style="color: red;"><strong>Error loading data:</strong> ${error.message}. <br>Check the browser console. This might be a CORS issue if you're running this locally as a file.</p>`;
+            }
+        }
+
+        // Call the function to fetch and display data
+        fetchDataAndDisplay();
+    </script>
+</body>
+</html>
